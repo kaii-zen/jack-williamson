@@ -1,0 +1,10 @@
+# emacs
+*~
+\#*\#
+
+# terraform
+.terraform
+terraform.tfstate*
+
+# nix
+result*
