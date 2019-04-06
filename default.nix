@@ -76,6 +76,7 @@ let
     PATH=${with pkgs; lib.makeBinPath [ coreutils findutils gnugrep gnused nix terraform ]}
 
     result=$(nix-build ${./.}/eval.nix --show-trace --no-out-link --attr terraform.result)
+    echo $result
 
     export TF_DATA_DIR=$PWD/.terraform
     # 👇 here we use it to set `-state` only for the commands and sub-commands that care for it.

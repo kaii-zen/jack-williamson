@@ -85,7 +85,7 @@ in {
           };
 
           locals = mkOption {
-            type = nullOr attrs;
+            type    = nullOr attrs;
             default = null;
           };
         };
@@ -98,12 +98,12 @@ in {
     };
 
     configTfJson = mkOption {
-      type = str;
+      type     = str;
       internal = true;
     };
 
     result = mkOption {
-      type = package;
+      type     = package;
       internal = true;
     };
   };
@@ -120,13 +120,15 @@ in {
     tfJsonFiles  = builtins.filter isTfJsonFile cfg.files;
     configTfJson = builtins.toJSON (lib.filterAttrs (name: value: name != "_module" && value != null) cfg.config);
     
-    result = pkgs.runCommand "terraform-${baseNameOf (builtins.getEnv "PWD")}" {
+    result = with lib; pkgs.runCommand "terraform-${baseNameOf (builtins.getEnv "PWD")}" {
       inherit (cfg) configTfJson tfFiles tfJsonFiles;
       passAsFile   = [ "configTfJson" ];
-      
-    } ''
-      install --mode 444 -D $configTfJsonPath $out/terraform.tf.json
-      install --mode 444 $tfFiles $tfJsonFiles $out
-    '';
+    } (''
+      mkdir -p $out
+    '' + (optionalString (cfg.configTfJson != "{}") ''
+        install --mode 444 $configTfJsonPath $out/terraform.tf.json
+    '') + (optionalString (cfg.tfFiles ++ cfg.tfJsonFiles != []) ''
+        install --mode 444 $tfFiles $tfJsonFiles $out
+    ''));
   };
 }
