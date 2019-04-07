@@ -26,6 +26,11 @@ in {
       default     = singleton (builtins.getEnv "PWD");
     };
 
+    dirs = mkOption {
+      type     = listOf dir;
+      internal = true;
+    };
+
     files = mkOption {
       type     = listOf (either dir file);
       internal = true;
@@ -110,11 +115,17 @@ in {
 
   config.terraform = {
     files = with lib; let
-      dirs        = filterDirs cfg.paths;
-      expand      = dir: with builtins; map (f: "${dir}/${f}") (attrNames (readDir dir));
-      filterDirs  = builtins.filter isDir;
-    in builtins.foldl' (files: dir: files ++ (expand dir)) [] dirs;
+      dirs         = filterDirs cfg.paths;
+      files        = filterFiles cfg.paths;
+      expand       = dir: with builtins; filterFiles (map (f: "${dir}/${f}") (attrNames (readDir dir)));
+      filterDirs   = builtins.filter isDir;
 
+      filterFiles  = path: with builtins; filter (file: let baseName = baseNameOf file; in ! (hasPrefix "terraform.tfstate" baseName) && baseName != ".terraform") (filter isFile path);
+
+      expandedDirs = builtins.foldl' (files: dir: files ++ (expand dir)) [] dirs;
+    in expandedDirs ++ files;
+
+    dirs         = builtins.filter isDir        cfg.paths;
     tfFiles      = builtins.filter isTfFile     cfg.files;
     tfNixFiles   = builtins.filter isTfNixFile  cfg.files;
     tfJsonFiles  = builtins.filter isTfJsonFile cfg.files;
@@ -123,12 +134,14 @@ in {
     result = with lib; pkgs.runCommand "terraform-${baseNameOf (builtins.getEnv "PWD")}" {
       inherit (cfg) configTfJson tfFiles tfJsonFiles;
       passAsFile   = [ "configTfJson" ];
+      buildInputs  = [ pkgs.terraform ];
     } (''
       mkdir -p $out
+      cd $_
     '' + (optionalString (cfg.configTfJson != "{}") ''
-        install --mode 444 $configTfJsonPath $out/terraform.tf.json
+        install --mode 444 $configTfJsonPath ./terraform.tf.json
     '') + (optionalString (cfg.tfFiles ++ cfg.tfJsonFiles != []) ''
-        install --mode 444 $tfFiles $tfJsonFiles $out
+        install --mode 444 $tfFiles $tfJsonFiles .
     ''));
   };
 }

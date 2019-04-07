@@ -58,6 +58,7 @@ let
         exec $0 get-cmds-recursive terraform 2>&1 | xargs --no-run-if-empty --max-args=1 -d '\n' $0 get-opts
         ;;
       *)
+        1>&2 echo "idk wtf you want. kthxbye."
         exit 1
         ;;
     esac
@@ -67,6 +68,7 @@ let
   terraform-option-index = pkgs.runCommand "terraform-option-index" {
     buildInputs = [ terraform-help-scraper ];
   } ''
+    #            👇 lose the first 'terraform' column as it's pretty uselesss
     terrascrape | cut -d' ' -f2- > $out
   '';
   
@@ -76,7 +78,6 @@ let
     PATH=${with pkgs; lib.makeBinPath [ coreutils findutils gnugrep gnused nix terraform ]}
 
     result=$(nix-build ${./.}/eval.nix --show-trace --no-out-link --attr terraform.result)
-    echo $result
 
     export TF_DATA_DIR=$PWD/.terraform
     # 👇 here we use it to set `-state` only for the commands and sub-commands that care for it.
