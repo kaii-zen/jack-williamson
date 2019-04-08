@@ -3,8 +3,7 @@
 let
   cfg = config.terraform;
 
-  pathType = path: with builtins; (readDir (dirOf path)).${baseNameOf path};
-  is       = type: path: (pathType path) == type;
+  is       = type: path: (lib.pathType path) == type;
   isDir    = is "directory"; # ?
   isFile   = is   "regular"; # file ?
 
@@ -21,33 +20,43 @@ in {
     tfJsonFile = addCheck file isTfJsonFile // { name = "tfJsonfile"; description = "terraform json file"; };
 
   in {
-    paths = mkOption {
-      type        = listOf (either dir (either tfFile tfNixFile));
-      default     = singleton (builtins.getEnv "PWD");
-    };
+    dir = mkOption {
+      type = nullOr path;
 
-    dirs = mkOption {
-      type     = listOf dir;
-      internal = true;
-    };
+      description = ''
+        A directory containing a Terraform config from which we will generate a derivation where:
+        - <filename>*.tf.nix</filename> files will be:
+          - evaluated alongside whatever might be set in <option>config</option> (empty set by default)
+          - converted into a single <filename>terraform.tf.json</filename> file.
+        - Everything else will be copied <literal>as-is</literal>.
+        
+        That means that any filtering (<filename>terraform.tfstate*</filename> and <filename>.terraform/</filename> come to mind) is the
+        responsibility of the consumer and not a the concern of this module. The rationale here, if we take <filename>terraform.tfstate</filename> as an
+        example, is that we cannot predict with certainty where it's going to be at this point; as it may be overridden by a CLI arg
+        given to the `terraform` executable. Therefore the supplied <filename>terraform</filename> wrapper, is a better candidate for this
+        particular concern.
 
-    files = mkOption {
-      type     = listOf (either dir file);
-      internal = true;
-    };
+        The default, which takes the current working directory and filters out <filename>.terraform/</filename> and <filename>.terraform.tfstate*</filename>
+        is meant as an example.
 
-    tfFiles = mkOption {
-      type     = listOf tfFile;
-      internal = true;
+        This may also be set to <literal>null</literal>, in which case, only configuration in <option>config</option> will be used.
+      '';
+
+      default = cleanSourceWith {
+        src    = cleanSource (builtins.getEnv "PWD");
+        filter = name: type: let
+          baseName = baseNameOf (toString name);
+        in !(
+          ((baseName == ".terraform")                 && (type == "directory")) || 
+          ((hasPrefix   "terraform.tfstate" baseName) && (type == "regular"))
+        );
+      };
+
+      defaultText = "CWD";
     };
 
     tfNixFiles = mkOption {
-      type     = listOf tfNixFile;
-      internal = true;
-    };
-
-    tfJsonFiles = mkOption {
-      type     = listOf tfJsonFile;
+      type     = listOf path;
       internal = true;
     };
 
@@ -114,34 +123,25 @@ in {
   };
 
   config.terraform = {
-    files = with lib; let
-      dirs         = filterDirs cfg.paths;
-      files        = filterFiles cfg.paths;
-      expand       = dir: with builtins; filterFiles (map (f: "${dir}/${f}") (attrNames (readDir dir)));
-      filterDirs   = builtins.filter isDir;
+    tfNixFiles = with lib; let
+      dir      = cfg.dir or "/var/empty";
+      filter   = name: type: (type == "regular") && (hasSuffix ".tf.nix" name);
+      filtered = filterAttrs filter (builtins.readDir cfg.dir);
+      names    = builtins.attrNames filtered;
+      absolute = map (name: "${cfg.dir}/${name}") names;
+    in absolute;
 
-      filterFiles  = path: with builtins; filter (file: let baseName = baseNameOf file; in ! (hasPrefix "terraform.tfstate" baseName) && baseName != ".terraform") (filter isFile path);
-
-      expandedDirs = builtins.foldl' (files: dir: files ++ (expand dir)) [] dirs;
-    in expandedDirs ++ files;
-
-    dirs         = builtins.filter isDir        cfg.paths;
-    tfFiles      = builtins.filter isTfFile     cfg.files;
-    tfNixFiles   = builtins.filter isTfNixFile  cfg.files;
-    tfJsonFiles  = builtins.filter isTfJsonFile cfg.files;
     configTfJson = builtins.toJSON (lib.filterAttrs (name: value: name != "_module" && value != null) cfg.config);
-    
+
     result = with lib; pkgs.runCommand "terraform-${baseNameOf (builtins.getEnv "PWD")}" {
-      inherit (cfg) configTfJson tfFiles tfJsonFiles;
-      passAsFile   = [ "configTfJson" ];
-      buildInputs  = [ pkgs.terraform ];
-    } (''
-      mkdir -p $out
-      cd $_
-    '' + (optionalString (cfg.configTfJson != "{}") ''
-        install --mode 444 $configTfJsonPath ./terraform.tf.json
-    '') + (optionalString (cfg.tfFiles ++ cfg.tfJsonFiles != []) ''
-        install --mode 444 $tfFiles $tfJsonFiles .
-    ''));
+      inherit (cfg) configTfJson;
+      src         = cfg.dir;
+      passAsFile  = [ "configTfJson" ];
+      buildInputs = [ pkgs.terraform ];
+    } ''
+      cp -r ''${src:-/var/empty} $out
+      chmod +w $out
+      install --mode 444 $configTfJsonPath $_/terraform.tf.json
+    '';
   };
 }

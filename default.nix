@@ -88,16 +88,24 @@ let
   '';
 
   attribute-tester = pkgs.writeShellScriptBin "terrattr" ''
-    PATH=${with pkgs; lib.makeBinPath [ coreutils findutils gnugrep gnused nix terraform ]}
+    PATH=${with pkgs; lib.makeBinPath [ nix ]}
     attr=''${1?Must specify attribute}
     shift
     nix-instantiate --show-trace --eval --strict "$@" ${./.}/eval.nix --attr terraform.$attr
+  '';
+
+  attribute-builder = pkgs.writeShellScriptBin "terrabuild" ''
+    PATH=${with pkgs; lib.makeBinPath [ nix ]}
+    attr=''${1?Must specify attribute}
+    shift
+    nix-build ${./.}/eval.nix --attr terraform.$attr
   '';
 
 in pkgs.buildEnv {
   name  = "jack-williamson";
   paths = [
     attribute-tester
+    attribute-builder
     terraform-help-scraper
     wrapped-terraform
   ];

@@ -4,5 +4,5 @@ let
 in
 
 pkgs.mkShell {
-  buildInputs = [ jw pkgs.terraform ];
+  buildInputs = [ jw ];
 }
