@@ -84,7 +84,7 @@ in {
           };
 
           provider = mkOption {
-            type    = nullOr (attrsOf attrs);
+            type    = nullOr (either (listOf (attrsOf attrs)) (attrsOf attrs));
             default = null;
           };
 
