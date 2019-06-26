@@ -1,8 +1,10 @@
 let
-  pkgs = import <nixpkgs> {};
-  jw   = import ./. { inherit pkgs; };
+  sources = import ./nix/sources.nix;
+  pkgs    = import <nixpkgs> {};
+
+  jw = import (sources.jack-williamson or ./.) { inherit pkgs; };
 in
 
 pkgs.mkShell {
-  buildInputs = [ jw ];
+  buildInputs = with jw; [ cli wrapped-terraform ];
 }

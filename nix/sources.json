@@ -1,0 +1,37 @@
+{
+    "niv": {
+        "branch": "master",
+        "description": "Easy dependency management for Nix projects",
+        "homepage": "https://github.com/nmattia/niv",
+        "owner": "nmattia",
+        "repo": "niv",
+        "rev": "eb859c309e38450d70d458cf5ce06e6a2046f966",
+        "sha256": "11jf7fgj32m3aqhbn6fnxc323m4wl2wmca0am71ag8vrq6ayi6fs",
+        "type": "tarball",
+        "url": "https://github.com/nmattia/niv/archive/eb859c309e38450d70d458cf5ce06e6a2046f966.tar.gz",
+        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+    },
+    "nixpkgs": {
+        "branch": "nixos-18.09",
+        "description": "Nixpkgs/NixOS branches that track the Nixpkgs/NixOS channels",
+        "owner": "NixOS",
+        "repo": "nixpkgs-channels",
+        "rev": "a7e559a5504572008567383c3dc8e142fa7a8633",
+        "sha256": "16j95q58kkc69lfgpjkj76gw5sx8rcxwi3civm0mlfaxxyw9gzp6",
+        "type": "tarball",
+        "url": "https://github.com/NixOS/nixpkgs-channels/archive/a7e559a5504572008567383c3dc8e142fa7a8633.tar.gz",
+        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+    },
+    "nur-packages": {
+        "branch": "master",
+        "description": "A template for NUR repositories: [maintainer=@fgaz] ",
+        "homepage": "",
+        "owner": "kreisys",
+        "repo": "nur-packages",
+        "rev": "241532ea5a8298530ad640bd9f52513cd4c6c40a",
+        "sha256": "12cmvzx921h1g3qzs40r28nq8fdkaagaiaa70k8b4p1bwj2j2nj4",
+        "type": "tarball",
+        "url": "https://github.com/kreisys/nur-packages/archive/241532ea5a8298530ad640bd9f52513cd4c6c40a.tar.gz",
+        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+    }
+}
