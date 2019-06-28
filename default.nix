@@ -28,7 +28,7 @@ let
       PATH=${with pkgs; lib.makeBinPath [ niv ]}:$PATH
       niv init
       niv drop jack-williamson || true
-      niv add --branch simplify kreisys/jack-williamson
+      niv add kreisys/jack-williamson
       install -m 644 ${./shell.nix} shell.nix
       echo use nix > .envrc
     '')
