@@ -13,7 +13,7 @@ let
   cli = mkBashCli "jw" "generate terraform configs with nix" {} (mkCmd: [
     (mkCmd "eval" "eval *.tf.nix files and dump a nix.tf.json." {} ''
       PATH=${with pkgs; lib.makeBinPath [ nix ]}:$PATH
-      nix-build ${./.}/eval.nix --show-trace --out-link nix.tf.json --attr terraform.result
+      nix-build ${./.}/eval.nix --show-trace --out-link nix.tf.json --attr terraform.result >/dev/null
     '')
     (mkCmd "terraform" "eval and handover control to terraform." {
       aliases = [ "tf" ];
