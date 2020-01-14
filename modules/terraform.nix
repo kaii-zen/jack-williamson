@@ -92,7 +92,18 @@ in {
       absolute = map (name: "${cfg.dir}/${name}") names;
     in absolute;
 
-    configTfJson = builtins.toJSON (lib.filterAttrs (name: value: name != "_module" && value != null) cfg.config);
+    configTfJson = builtins.toJSON
+    (lib.filterAttrs (name: value:
+    (builtins.elem name [
+      "resource"
+      "data"
+      "variable"
+      "output"
+      "provider"
+      "module"
+      "terraform"
+      "locals" ]) && value != null)
+    cfg.config);
 
     result = pkgs.writeText "nix.tf.json" cfg.configTfJson;
   };
