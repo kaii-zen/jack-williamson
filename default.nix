@@ -2,7 +2,6 @@
 , sources ? import ./nix/sources.nix }:
 
 let
-  niv = (import sources.niv {}).niv;
   nur-packages = import sources.nur-packages {};
   mkBashCli = pkgs.callPackage (sources.nur-packages + "/pkgs/make-bash-cli") { inherit (nur-packages.lib) grid; };
 
@@ -25,10 +24,6 @@ let
     (mkCmd "init" "setup new project" {
       aliases = [ "i" ];
     } ''
-      PATH=${with pkgs; lib.makeBinPath [ niv ]}:$PATH
-      niv init
-      niv drop jack-williamson || true
-      niv add kreisys/jack-williamson
       install -m 644 ${./shell.nix} shell.nix
       echo use nix > .envrc
     '')
